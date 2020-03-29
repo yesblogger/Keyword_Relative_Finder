@@ -53,16 +53,18 @@ def relative_keyword_finder(keyword, max_try=1):
             query = r_searches['query'].strip()
             if IDENTIFIER in query:
                 try:
-                    # condition when key in the dictionary
-                    if not DATASET[query]:
-                        DATASET[query] = 1
-                        max_try += 1
-                        relative_keyword_finder(query, max_try)
+                    # action when key in the dictionary
+                    DATASET[query]    
                 except:
                     # condition when key is not in the dictionary
                     DATASET[query] = 0
+        # set condition to execute what will happen at the end of the above iteration
+        key = list(DATASET.keys())[list(DATASET.values()).index(0)]
+        DATASET[key] = 1
+        max_try += 1
+        relative_keyword_finder(key, max_try)
     except:
-        print("Response Error")
+        print("Response Error or Max recursion depth reach or DATASET reached completion")
 
 
 if __name__ == "__main__":
