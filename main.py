@@ -1,6 +1,7 @@
 import requests
 from data import get_api
 from datetime import date
+from location import geo_code
 import csv
 
 
@@ -10,15 +11,25 @@ SEARCH_API = get_api()
 
 DATASET = {}  # keyword value pair
 
-IDENTIFIER = input("Please enter the seed Keyword: ").strip()
+IDENTIFIER = []
 
-LOCATION = input("Please enter location for Google: ").strip()
+LOCATION = ""
+
+while True:
+    if not len(LOCATION):
+        LOCATION = geo_code(
+            input("Please enter location for Google: ").strip())
+    IDENTIFIER.append(input("Please enter a keyword: ").strip())
+    resp = input(
+        "Do you want to enter more keywords (y or n): ").lower().strip()
+    if LOCATION != "" and resp == 'n':
+        break
 
 # Functions
 
 
-def writer_func(keyword, d=DATASET):
-    filename = f"related_keywords_for_{keyword}_{date.today().__str__()}.csv"
+def writer_func(d=DATASET):
+    filename = f"related_keywords_for_{date.today().__str__()}.csv"
     with open(filename, mode="w", newline="", encoding="utf-8") as w_file:
         header = ["#", "Keywords"]
         writer = csv.DictWriter(w_file, fieldnames=header)
@@ -27,15 +38,23 @@ def writer_func(keyword, d=DATASET):
             writer.writerow({"#": i, "Keywords": k})
 
 
+def matcher(q):
+    for i in IDENTIFIER:
+        if i not in q:
+            return False
+    return True
+
+
 def main():
     global IDENTIFIER
-    relative_keyword_finder(IDENTIFIER)
-    writer_func(IDENTIFIER)
+    relative_keyword_finder(" ".join(IDENTIFIER))
+    if len(DATASET):
+        writer_func()
 
 
 def relative_keyword_finder(keyword, max_try=1):
-    global IDENTIFIER, LOCATION, SEARCH_API
-    if max_try > 100:
+    global LOCATION, SEARCH_API
+    if max_try > 1000:
         return None
     # Setting parameters for API call
     params = {
@@ -51,10 +70,10 @@ def relative_keyword_finder(keyword, max_try=1):
         # related searches as list of dictionary
         for r_searches in api_response['related_searches']:
             query = r_searches['query'].strip()
-            if IDENTIFIER in query:
+            if matcher(query):
                 try:
                     # action when key in the dictionary
-                    DATASET[query]    
+                    DATASET[query]
                 except:
                     # condition when key is not in the dictionary
                     DATASET[query] = 0
